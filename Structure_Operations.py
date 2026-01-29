@@ -27,7 +27,7 @@ def StaticallyDeterminate(nodes,bars):
     
     # Compute if b + r = 2j (Equation 3-1 of the textbook)
     if(n_bars + n_reactions < 2*n_nodes):
-        sys.exit("The truss is unstable")
+        sys.exit("The truss is unstable; did you input all of the reaction constraints correctly?")
     elif(n_bars + n_reactions > 2*n_nodes):
         sys.exit("The truss is statically indeterminate, and cannot be resolved using method of joints")
     else:
@@ -53,9 +53,35 @@ def ComputeReactions(nodes):
     
     # Continue from here
     # Sum of moments about the pin
+    [pin_x, pin_y] = pin_node.location # Gets x and y coordinates of pin
+    [roller_x, roller_y] = roller_node.location # Gets x and y coordinates of roller
+    
+    roller_reaction = 0
+    for node in nodes:
+        [node_x, node_y] = node.location
+        # contributions in the y direction
+        roller_reaction += node.yforce_external * (node_x - pin_x)
+        # contributions in the x direction
+        roller_reaction += node.xforce_external * (pin_y - node_y)
+        
+    if(roller_node.constraint == "roller_no_xdisp"):
+        roller_reaction = -roller_reaction / (pin_y - roller_y)
+        roller_node.AddReactionXForce(roller_reaction)
+    elif(roller_node.constraint == "roller_no_ydisp"):
+        roller_reaction = -roller_reaction / (roller_x - pin_x)
+        roller_node.AddReactionYForce(roller_reaction)
+        
+    # 1. Sum all external forces
+    sum_fx = sum(node.xforce_external for node in nodes)
+    sum_fy = sum(node.yforce_external for node in nodes)
 
-    # sum of forces in y direction
+# 2. Identify the roller reaction force (stored in previous steps)
+# We use np.nan_to_num to treat the "NAN" reaction directions as 0
+    r_roller_x = (roller_node.xforce_reaction)
+    r_roller_y = (roller_node.yforce_reaction)
 
-    # sum of forces in x direction
+# 3. Solve for pin reactions and update the pin_node object
+    pin_node.AddReactionXForce(-(sum_fx + r_roller_x))
+    pin_node.AddReactionYForce(-(sum_fy + r_roller_y))
     
     
