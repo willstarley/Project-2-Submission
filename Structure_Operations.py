@@ -71,17 +71,22 @@ def ComputeReactions(nodes):
         roller_reaction = -roller_reaction / (roller_x - pin_x)
         roller_node.AddReactionYForce(roller_reaction)
         
-    # 1. Sum all external forces
-    sum_fx = sum(node.xforce_external for node in nodes)
-    sum_fy = sum(node.yforce_external for node in nodes)
-
-# 2. Identify the roller reaction force (stored in previous steps)
-# We use np.nan_to_num to treat the "NAN" reaction directions as 0
-    r_roller_x = (roller_node.xforce_reaction)
-    r_roller_y = (roller_node.yforce_reaction)
-
-# 3. Solve for pin reactions and update the pin_node object
-    pin_node.AddReactionXForce(-(sum_fx + r_roller_x))
-    pin_node.AddReactionYForce(-(sum_fy + r_roller_y))
-    
+    # sum of forces in y direction
+    sum_force_y = 0
+    for node in nodes:
+        sum_force_y += node.yforce_external
+        
+    # sum of forces in x direction
+    sum_force_x = 0
+    for node in nodes:
+        sum_force_x -= node.xforce_external
+        
+    if(roller_node.constraint=="roller_no_xdisp"):
+        sum_force_x += roller_reaction
+        
+    elif(roller_node.constraint=="roller_no_ydisp"):
+        sum_force_y += roller_reaction
+        
+    pin_node.AddReactionYForce(-sum_force_y)
+    pin_node.AddReactionXForce(-sum_force_x)
     
