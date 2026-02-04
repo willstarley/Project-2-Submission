@@ -30,7 +30,7 @@ def VectorTwoNorm(vector):
 
 # Find a shared node between two bars
 def FindSharedNode(bar_1,bar_2):
-    if(bar_1.init_node==bar_2.initnode):
+    if(bar_1.init_node==bar_2.init_node):
         return bar_1.init_node
     elif(bar_1.init_node==bar_2.end_node):
         return bar_1.init_node
